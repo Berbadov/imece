@@ -88,12 +88,22 @@ fn main() -> io::Result<()> {
 
         while ratatui::crossterm::event::poll(Duration::from_millis(120))? {
             if let CEvent::Key(key) = ratatui::crossterm::event::read()? {
-                if key.kind == KeyEventKind::Press
-                    && (key.code == KeyCode::Char('q')
-                        || (key.code == KeyCode::Char('c')
-                            && key.modifiers.contains(KeyModifiers::CONTROL)))
-                {
-                    quit = true;
+                if key.kind != KeyEventKind::Press {
+                    continue;
+                }
+                match key.code {
+                    KeyCode::Char('q') => quit = true,
+                    KeyCode::Char('c')
+                        if key.modifiers.contains(KeyModifiers::CONTROL) =>
+                    {
+                        quit = true;
+                    }
+                    KeyCode::Up => chat.scroll_up(),
+                    KeyCode::Down => chat.scroll_down(),
+                    KeyCode::Char('g') => chat.scroll_top(),
+                    KeyCode::Char('G') => chat.scroll_bottom(),
+                    KeyCode::Char(' ') => chat.toggle_pause(),
+                    _ => {}
                 }
             }
         }
@@ -124,8 +134,8 @@ fn run_village(
     if !dry_run && !imece::git_is_clean(tx) {
         return;
     }
+    let _ = tx.send(Event::System(format!("queue {} tasks", tasks.len())));
     for t in &tasks {
-        let _ = tx.send(Event::System(format!("harvesting {}", t.display())));
         if let Err(e) = engine.run_task(t, tx) {
             let _ = tx.send(Event::System(format!("task failed: {e}")));
         }

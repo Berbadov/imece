@@ -202,7 +202,7 @@ impl Imece {
         let helpers: Vec<Agent> = VILLAGE.iter().copied().filter(|a| *a != director).collect();
 
         let _ = tx.send(Event::System(format!(
-            "harvesting {} - field: {}",
+            "task {} - field: {}",
             task_path.file_stem().unwrap_or_default().to_string_lossy(),
             field.label()
         )));
